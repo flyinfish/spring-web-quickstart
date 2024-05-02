@@ -1,8 +1,8 @@
 # spring-web-quickstart
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
-
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+does check how spring-web works with `@org.springdoc.api.annotations.ParameterObject`.
+Conclusion is that this annotation has absolutely no effect at all!? 
+Wheter on the openapi-ui/-yaml nor on runtime-processing of body and query-parameters. 
 
 ## Running the application in dev mode
 
