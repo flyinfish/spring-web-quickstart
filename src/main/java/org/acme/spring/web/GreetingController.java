@@ -3,6 +3,7 @@ package org.acme.spring.web;
 import java.util.Optional;
 
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BeanParam;
 
 import org.acme.spring.web.entity.Greeting;
 import org.acme.spring.web.entity.HelloParam;
@@ -10,6 +11,7 @@ import org.acme.spring.web.entity.HelloParamCheatedWithQueryParam;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,12 +48,18 @@ public class GreetingController {
     }
 
     @GetMapping(path = "/echo-param-cheated-with-query-param-with-validations", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HelloParamCheatedWithQueryParam helloWithCheatedParamValidated(@Valid HelloParamCheatedWithQueryParam helloParam) {
+    public HelloParamCheatedWithQueryParam helloWithCheatedParamValidated(@BeanParam @Valid HelloParamCheatedWithQueryParam helloParam) {
+        return helloParam;
+    }
+
+    @PostMapping(path = "/echo-param-cheated-with-query-param-with-validations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public HelloParamCheatedWithQueryParam helloWithCheatedParamValidatedPost(@BeanParam @Valid HelloParamCheatedWithQueryParam helloParam,
+            String body) {
         return helloParam;
     }
 
     @GetMapping(path = "/echo-param-at-parameter-object-cheated-with-query-param-with-validations", produces = MediaType.APPLICATION_JSON_VALUE)
-    public HelloParamCheatedWithQueryParam helloWithCheatedParamAnnotatedWithParamObjectValidated(@Valid @ParameterObject HelloParamCheatedWithQueryParam helloParam) {
+    public HelloParamCheatedWithQueryParam helloWithCheatedParamAnnotatedWithParamObjectValidated(@BeanParam @Valid @ParameterObject HelloParamCheatedWithQueryParam helloParam) {
         return helloParam;
     }
 }

@@ -1,12 +1,20 @@
 package org.acme.spring.web;
 
 import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.hasSize;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+
 import org.acme.spring.web.entity.HelloParam;
 import org.acme.spring.web.entity.Title;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,17 +22,34 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.path.json.JsonPath;
 
 @QuarkusTest
 public class GreetingControllerTest {
+    static JsonPath openApiJson;
+
+    @BeforeAll
+    static void getOpenApiJson() throws IOException {
+        openApiJson = new JsonPath(Files.readString(Path.of("target/definitions/openapi.json")));
+    }
 
     @Test
     public void testHelloEndpoint() {
         given().when().get("/greeting").then().statusCode(200).body("phrase", equalTo("hello ?????"));
+        List<String> params = openApiJson.get("paths.'/greeting'.get.parameters");
+        assertThat(params.size()).isEqualTo(1);
     }
 
     @Nested
     class plainDtoDoesNotWork {
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param", "/echo-param-at-parameter-object"})
+        void openapiJsonDoesNotContainQueryParamsButRequestBody(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).doesNotContain("parameters");
+            assertThat(get.keySet()).contains("requestBody");
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"/echo-param", "/echo-param-at-parameter-object"})
         void stating415UnsupportedMediaTypeWhenNoContentTypeIsGiven(String uri) {
@@ -99,10 +124,19 @@ public class GreetingControllerTest {
                     .then()
                     .statusCode(204);
         }
+
     }
 
     @Nested
     class dtoDoesOnlyWorkWhenCheated {
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param-cheated-with-query-param", "/echo-param-at-parameter-object-cheated-with-query-param"})
+        void despiteHavingWorkingQueryParamsOpenApiClaimsHavingRequestBody(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).contains("requestBody");
+            assertThat(get.keySet()).doesNotContain("parameters");
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"/echo-param-cheated-with-query-param", "/echo-param-at-parameter-object-cheated-with-query-param"})
         void giving200OnEmptyQuery(String uri) {
@@ -168,10 +202,20 @@ public class GreetingControllerTest {
                     .body("title", equalTo("SIGNORA"))
                     .body("suffix", equalTo("--query-suffix--"));
         }
+
     }
 
     @Nested
-    class cheatedDtoNeedsAtValidAnnotation {
+    class cheatedDtoNeedsAtValidAnnotationForValidationAndAtBeanParamForOpenApi {
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param-cheated-with-query-param-with-validations",
+                "/echo-param-at-parameter-object-cheated-with-query-param-with-validations"})
+        void despiteHavingWorkingQueryParamsAndAtBeanParamOpenApiClaimsHavingRequestBody(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).contains("requestBody");
+            assertThat(get.keySet()).doesNotContain("parameters");
+        }
+
         @ParameterizedTest
         @ValueSource(strings = {"/echo-param-cheated-with-query-param-with-validations",
                 "/echo-param-at-parameter-object-cheated-with-query-param-with-validations"})
@@ -196,5 +240,7 @@ public class GreetingControllerTest {
                     .body("title", equalTo("SIGNORA"))
                     .body("suffix", equalTo("--query-suffix--"));
         }
+
     }
+
 }
