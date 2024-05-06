@@ -43,11 +43,19 @@ public class GreetingControllerTest {
     @Nested
     class plainDtoDoesNotWork {
         @ParameterizedTest
-        @ValueSource(strings = {"/echo-param", "/echo-param-at-parameter-object"})
+        @ValueSource(strings = {"/echo-param"})
         void openapiJsonDoesNotContainQueryParamsButRequestBody(String uri) {
             Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
             assertThat(get.keySet()).doesNotContain("parameters");
             assertThat(get.keySet()).contains("requestBody");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param-at-parameter-object"})
+        void withPatchAtParameterObjectDoesNotWorkWhenItsFieldsAreNotAnnotatedWithAtQueryParameter(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).doesNotContain("parameters");
+            assertThat(get.keySet()).doesNotContain("requestBody");
         }
 
         @ParameterizedTest
@@ -130,11 +138,19 @@ public class GreetingControllerTest {
     @Nested
     class dtoDoesOnlyWorkWhenCheated {
         @ParameterizedTest
-        @ValueSource(strings = {"/echo-param-cheated-with-query-param", "/echo-param-at-parameter-object-cheated-with-query-param"})
+        @ValueSource(strings = {"/echo-param-cheated-with-query-param"})
         void despiteHavingWorkingQueryParamsOpenApiClaimsHavingRequestBody(String uri) {
             Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
             assertThat(get.keySet()).contains("requestBody");
             assertThat(get.keySet()).doesNotContain("parameters");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param-at-parameter-object-cheated-with-query-param"})
+        void withPatchAtParameterObjectFinallyWorks(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).doesNotContain("requestBody");
+            assertThat(get.keySet()).contains("parameters");
         }
 
         @ParameterizedTest
@@ -208,12 +224,18 @@ public class GreetingControllerTest {
     @Nested
     class cheatedDtoNeedsAtValidAnnotationForValidationAndAtBeanParamForOpenApi {
         @ParameterizedTest
-        @ValueSource(strings = {"/echo-param-cheated-with-query-param-with-validations",
-                "/echo-param-at-parameter-object-cheated-with-query-param-with-validations"})
+        @ValueSource(strings = {"/echo-param-cheated-with-query-param-with-validations"})
         void despiteHavingWorkingQueryParamsAndAtBeanParamOpenApiClaimsHavingRequestBody(String uri) {
             Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
             assertThat(get.keySet()).contains("requestBody");
             assertThat(get.keySet()).doesNotContain("parameters");
+        }
+        @ParameterizedTest
+        @ValueSource(strings = {"/echo-param-at-parameter-object-cheated-with-query-param-with-validations"})
+        void withPatchAtParameterObjectFinallyWorks(String uri) {
+            Map<String,?> get = openApiJson.get("paths.'%s'.get".formatted(uri));
+            assertThat(get.keySet()).doesNotContain("requestBody");
+            assertThat(get.keySet()).contains("parameters");
         }
 
         @ParameterizedTest
